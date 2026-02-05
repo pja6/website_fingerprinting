@@ -2,26 +2,29 @@
 # Posted by dshepherd, modified by community. See post 'Timeline' for change history
 # Retrieved 2026-01-24, License - CC BY-SA 4.0
 
-
 services:
   alice:
     build: ./alice
-    image: kali-rolling
+    #image: kali-rolling
     cap_add:
       - NET_ADMIN
     hostname: alice
     networks:
       moon-internal:
         ipv4_address: 172.28.0.3
-    command: >
-      sh -c "
-        ip route del default &&
-        ip route add default via 172.28.0.2 &&
-        tail -f /dev/null
-      "
+    #user: 1000:1000
+    volumes:
+      - ./alice/alice_mount:/workspace
+    #overrides the CMD in dockerfile if left here
+    #command: >
+    #  sh -c "
+    #    ip route del default &&
+    #    ip route add default via 172.28.0.2 &&
+    #    tail -f /dev/null
+    #  "
   bob:
     build: ./bob
-    image: kali-rolling
+    #image: kali-rolling
     cap_add:
       - NET_ADMIN
     hostname: bob
@@ -32,18 +35,19 @@ services:
         ipv4_address: 172.28.0.2
       internet:
         ipv4_address: 172.29.0.2
+    #user: 1000:1000
     volumes:
-      - ./captures:/captures
+      - ./bob/bob_mount:/workspace
     command: >
       sh -c "
         ip route del default &&
         ip route add default via 172.29.0.10 &&
-        tcpdump -i eth0 -w /captures/alice.pcap &
+        tcpdump -i eth0 -w /workspace/alice.pcap &&
         tail -f /dev/null
       "
   nat:
     build: ./nat
-    image: alpine
+    #image: alpine
     cap_add:
       - NET_ADMIN
     hostname: nat
