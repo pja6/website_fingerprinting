@@ -4,20 +4,20 @@
 
 A directory is included w/ the relevant container names - these should be left as is. A docker compose script has been included to spin up the network. Docker must be installed for the following to work as intended. In the parent directory use:
 
-                `sudo ./docker_run.sh`
+                sudo ./docker_run.sh
 
-    - This will start all the required containers and test routing. If this file does not run, `chmod +x [filename]` might be required to make it executable.
+  - This will start all the required containers and test routing. If this file does not run, `chmod +x [filename]` might be required to make it executable.
 
 
 To run the Python script you can use:
 
-        `sudo python3 main.py` 
+        sudo python3 main.py 
         
-        It will also take additional options like -l (the url list) -r (number of runs) -i (your network interface) 
+  - It will also take additional options like -l (the url list) -r (number of runs) -i (your network interface) 
 
 To spin down the network use:
 
-            `docker compose down`
+            docker compose down
 
 ### To Do:
 
