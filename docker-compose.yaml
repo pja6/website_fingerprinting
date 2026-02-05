@@ -1,0 +1,71 @@
+# Source - https://stackoverflow.com/questions/52595272/use-docker-container-as-network-gateway
+# Posted by dshepherd, modified by community. See post 'Timeline' for change history
+# Retrieved 2026-01-24, License - CC BY-SA 4.0
+
+
+services:
+  alice:
+    build: ./alice
+    image: kali-rolling
+    cap_add:
+      - NET_ADMIN
+    hostname: alice
+    networks:
+      moon-internal:
+        ipv4_address: 172.28.0.3
+    command: >
+      sh -c "
+        ip route del default &&
+        ip route add default via 172.28.0.2 &&
+        tail -f /dev/null
+      "
+  bob:
+    build: ./bob
+    image: kali-rolling
+    cap_add:
+      - NET_ADMIN
+    hostname: bob
+    sysctls:
+      net.ipv4.ip_forward: "1"
+    networks:
+      moon-internal:
+        ipv4_address: 172.28.0.2
+      internet:
+        ipv4_address: 172.29.0.2
+    volumes:
+      - ./captures:/captures
+    command: >
+      sh -c "
+        ip route del default &&
+        ip route add default via 172.29.0.10 &&
+        tcpdump -i eth0 -w /captures/alice.pcap &
+        tail -f /dev/null
+      "
+  nat:
+    build: ./nat
+    image: alpine
+    cap_add:
+      - NET_ADMIN
+    hostname: nat
+    sysctls:
+      net.ipv4.ip_forward: "1"
+    networks:
+      internet:
+        ipv4_address: 172.29.0.10
+    command: >
+      sh -c "
+        iptables -P FORWARD ACCEPT &&
+        iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE &&
+        tail -f /dev/null
+      "
+networks:
+  moon-internal:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+  internet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.29.0.0/16
