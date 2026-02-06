@@ -16,20 +16,13 @@ RUN apt-get update && \
       iputils-ping \
       traceroute\
       curl \
-      tar \
+      tor \
       xz-utils \
       iproute2 \
       iptables \
       ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /opt/tor
-#download tor expert bundle
-RUN curl -L \
-    -o tor.tar.gz \
-    https://archive.torproject.org/tor-package-archive/torbrowser/15.0.4/tor-expert-bundle-linux-x86_64-15.0.4.tar.gz \
- && tar -xzf tor.tar.gz \
- && rm tor.tar.gz 
 
 # Prev. command from compose, copying for entrypoint
  #   sh -c "
@@ -42,8 +35,13 @@ RUN curl -L \
 ENTRYPOINT ["sh", "-c", "\
 ip route del default && \
 ip route add default via 172.28.0.2 && \
+echo 'Starting Tor...' && \
+service tor start && \
+echo 'Waiting for Tor to bootstrap...' && \
+sleep 15 && \
+echo 'Running crawler...' && \
 python3 /workspace/crawler.py && \
-tail -f /dev/null
+tail -f /dev/null \
 "]
 
 

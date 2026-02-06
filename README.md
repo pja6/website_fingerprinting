@@ -29,13 +29,15 @@ Implement automation logic including:
   
     - [x] Test Alice container w/ crawler script
   
-    - [ ] Test Alice container w/ tor client running and crawler script
+    - [x] Test Alice container w/ tor client running and crawler script
 
 - Bob container capturing Alice traffic and analyzing (creating monitored set to be done before or during?)
   
     - [ ] Add logic to anlyze script: compile and normalize without compare
   
     - [ ] Fix analyze script bug
+
+    - [ ] Create monitored set 
   
     - [x] Test tcpdump automation with bob container
 
