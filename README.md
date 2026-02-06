@@ -27,7 +27,7 @@ Implement automation logic including:
 
 - Alice container launching Tor client and crawler script
   
-    - [ ] Test Alice container w/ crawler script
+    - [x] Test Alice container w/ crawler script
   
     - [ ] Test Alice container w/ tor client running and crawler script
 
@@ -37,7 +37,7 @@ Implement automation logic including:
   
     - [ ] Fix analyze script bug
   
-    - [ ] Test tcpdump automation with bob container
+    - [x] Test tcpdump automation with bob container
 
 
 
