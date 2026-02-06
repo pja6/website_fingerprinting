@@ -42,8 +42,8 @@ RUN curl -L \
 ENTRYPOINT ["sh", "-c", "\
 ip route del default && \
 ip route add default via 172.28.0.2 && \
-python3 /workspace/crawler.py \
-
+python3 /workspace/crawler.py && \
+tail -f /dev/null
 "]
 
 

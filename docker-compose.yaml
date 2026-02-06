@@ -42,7 +42,7 @@ services:
       sh -c "
         ip route del default &&
         ip route add default via 172.29.0.10 &&
-        tcpdump -i eth0 -w /workspace/alice.pcap &&
+        tcpdump -i eth0 -U -w /workspace/alice.pcap &
         tail -f /dev/null
       "
   nat:

@@ -53,7 +53,7 @@ def runScrape(scrape_file, numRuns=2, interface=None):
 
         makeTestDir(run)
       
-        fo = open(scrape_file)
+        fo = open(scrape_file_path)
         urlList = fo.readlines()
         #clears file first, in case it's already created
         with open(f'crawl_{run}_paths', 'w') as file:
@@ -105,15 +105,15 @@ def scrape(url, pcap, path, runs, interface):
     #print(f'{pcap}.pcap created')
 
 def pause_for_bob(time):
-    for i in range(timer):
+    for i in range(time):
         print(f"waiting...{i} second(s)")
         s,o = subprocess.getstatusoutput(f"sleep 1")    
 
 
 def main():
     
-    #timer = 30
-    #pause_for_bob(timer)
+    timer = 15
+    pause_for_bob(timer)
     
     print("starting crawl...")
     
