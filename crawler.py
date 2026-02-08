@@ -25,7 +25,7 @@ def makeTestDir(num):
         os.chmod(root_folder, 0o777)
         print(f"{root_folder} created")
     
-    traces_folder=os.path.join(f"{root_folder}",f"crawl_{num}")
+    traces_folder=os.path.join("traces_root",f"crawl_{num}")
 
     os.makedirs(traces_folder, exist_ok=True)
     os.chmod(traces_folder, 0o777)
@@ -117,7 +117,7 @@ def main():
     
     print("starting crawl...")
     
-    runScrape("test_file", 1)
+    runScrape("test_file", 2)
 
     print("\nuser crawl complete\n")
 

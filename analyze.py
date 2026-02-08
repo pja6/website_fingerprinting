@@ -41,6 +41,8 @@ def avg_inter_arrival_time(pcap):
         t2 - t1
         for t1, t2 in zip(times, times[1:])
     ]
+    print("print interarrival")
+    print( sum(diffs/len(diffs)))
 
     return sum(diffs) / len(diffs)
 
@@ -59,6 +61,8 @@ def transmission_speed(pcap):
         return 0.0
 
     total_bytes = sum(len(pkt[TCP].payload) for pkt in tcp_packets)
+    
+    
 
     return total_bytes / duration
 
@@ -106,10 +110,10 @@ def normalize(trace_dict):
     for run in trace_dict:
         print(run)
        
-        #print(trace_dict[run]["inter-arrival_"])
-        normalized_run["avg_payload"] += sum(trace_dict[run]["payload_size"]) / Decimal(len(trace_dict[run]["payload_size"]))
-        normalized_run["avg_ia_time"] += sum(trace_dict[run]["inter-arrival_time"]) / Decimal(len(trace_dict[run]["inter-arrival_time"]))
-        normalized_run["avg_t_speed"] += sum(trace_dict[run]["trans_speed"]) / Decimal(len(trace_dict[run]["trans_speed"]))
+        print(trace_dict[run]["inter-arrival_time"])
+        normalized_run["avg_payload"] += sum(Decimal(trace_dict[run]["payload_size"])) / Decimal(len(trace_dict[run]["payload_size"]))
+        normalized_run["avg_ia_time"] += sum(Decimal(trace_dict[run]["inter-arrival_time"])) / Decimal(len(trace_dict[run]["inter-arrival_time"]))
+        normalized_run["avg_t_speed"] += sum(Decimal(trace_dict[run]["trans_speed"])) / Decimal(len(trace_dict[run]["trans_speed"]))
     
     # avg across runs
     num_runs = len(trace_dict)
@@ -147,7 +151,7 @@ def find_possible_matches(user_metrics, monitored_dict, threshold=None):
     
     for m_name, m_metrics in monitored_dict.items():
         #score = compare_score(user_metrics, m_metrics)
-        score=3
+        score= compare_score(user_metrics, monitored_dict)
         if threshold is None or score < threshold:
             matches.append((m_name, score))
     
@@ -213,7 +217,12 @@ def analyze(user_path, attack_path):
     #attempt to match
     matches = match_traces(user_traces, monitored_set)
 
+
+def main():
+    analyze()
     
+if __name__ == "__main__":
+    main()
     
 
  
