@@ -111,27 +111,42 @@ def create_dict(metadata_dict, readFile=None, readpcap=None):
         
         
 def normalize(trace_dict):
+    sites_list={}
     
-    normalized_run = {
+    #first remove all trailing crawl numbers
+    
+    for trace_name, metrics in trace_dict:
+        #just the first _
+        site_name = trace_name.rsplit('_',1)[0]
+        
+        if site_name not in sites_list:
+            sites_list[site_name]= []
+        sites_list[site_name].append(metrics)
+    
+    
+    sites_normalized={}
+    #avg individual runs
+    for site_names, runs in sites_list.items():
+        normalized_avg = {
         "avg_payload": 0.0,
         "avg_ia_time": 0.0,
         "avg_t_speed": 0.0
     }
 
-    #avg individual runs
-    for run in trace_dict:
-        print(run)
        
-        print(trace_dict[run]["inter-arrival_time"])
-        normalized_run["avg_payload"] += sum(float(x) for x in trace_dict[run]["payload_size"]) / len(trace_dict[run]["payload_size"])
-        normalized_run["avg_ia_time"] += sum(float(x) for x in trace_dict[run]["inter-arrival_time"]) / len(trace_dict[run]["inter-arrival_time"])
-        normalized_run["avg_t_speed"] += sum(float(x) for x in trace_dict[run]["trans_speed"]) / len(trace_dict[run]["trans_speed"])
-    
-    # avg across runs
-    num_runs = len(trace_dict)
-    normalized_trace = {k: v / num_runs for k, v in normalized_run.items()}
-    
-    return normalized_trace
+        for run_metrics in runs:
+            
+            normalized_avg["avg_payload"] += sum(float(x) for x in trace_dict[run]["payload_size"]) / len(trace_dict[run]["payload_size"])
+            normalized_avg["avg_ia_time"] += sum(float(x) for x in trace_dict[run]["inter-arrival_time"]) / len(trace_dict[run]["inter-arrival_time"])
+            normalized_avg["avg_t_speed"] += sum(float(x) for x in trace_dict[run]["trans_speed"]) / len(trace_dict[run]["trans_speed"])
+        
+        # avg across runs
+        num_runs = len(runs)
+        sites_normalized[site_name] = {}
+        for k, v in normalized_avg.items():
+            sites_normalized[site_name][k] = v / num_runs
+            
+    return sites_normalized
 
 #------------------------------------analyze-------------------------------------------------  
 
@@ -149,7 +164,8 @@ def compare_score(user, monitored, weights=None):
     score = 0
     for metric in ["payload_size", "inter_arrival_time", "trans_speed"]:
         print("user metrics")
-        print(user[metric])
+        print(f"user metric: {user[metric]}")
+        print(f"monitored metric: {monitored[metric]}")
         diff = abs(user[metric] - monitored[metric])
         score += diff * weights[metric]
     
@@ -159,6 +175,8 @@ def compare_score(user, monitored, weights=None):
 def find_possible_matches(user_metrics, monitored_dict, threshold=None):
     
     matches = []
+    print(f"user metrics:{user_metrics}")
+    print(f"monitored_metrics:{monitored_dict}")
     
     for m_name, m_metrics in monitored_dict.items():
         #score = compare_score(user_metrics, m_metrics)
