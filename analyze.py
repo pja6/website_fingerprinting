@@ -41,8 +41,7 @@ def avg_inter_arrival_time(pcap):
         t2 - t1
         for t1, t2 in zip(times, times[1:])
     ]
-    print("print interarrival")
-    print( sum(diffs/len(diffs)))
+
 
     return sum(diffs) / len(diffs)
 
@@ -72,9 +71,9 @@ def transmission_speed(pcap):
 
 
 #takes the path file and fills dictionary w/ related metadata accordingly
-def create_dict(metadata_dict, readfile=none, readpcap=none):
+def create_dict(metadata_dict, readFile=None, readpcap=None):
     
-    metadata_dict.setdefault(key, {"payload_size":[], "inter-arrival_time":[], "trans_speed":[]})
+  
     """" saving because i spent time on it
     if readpcap:
         sites=[]
@@ -100,11 +99,12 @@ def create_dict(metadata_dict, readfile=none, readpcap=none):
         iat = avg_inter_arrival_time(pcap)
         speed= transmission_speed(pcap)
 
-    
+
         #steps to get name without relative path for key
         key = path.split('/')[-1]
         key=key.strip()
     
+        metadata_dict.setdefault(key, {"payload_size":[], "inter-arrival_time":[], "trans_speed":[]})
         metadata_dict[key]["payload_size"].append(payload)
         metadata_dict[key]["inter-arrival_time"].append(iat)
         metadata_dict[key]["trans_speed"].append(speed)
@@ -113,9 +113,9 @@ def create_dict(metadata_dict, readfile=none, readpcap=none):
 def normalize(trace_dict):
     
     normalized_run = {
-        "avg_payload": Decimal(0),
-        "avg_ia_time": Decimal(0),
-        "avg_t_speed": Decimal(0)
+        "avg_payload": 0.0,
+        "avg_ia_time": 0.0,
+        "avg_t_speed": 0.0
     }
 
     #avg individual runs
@@ -123,14 +123,13 @@ def normalize(trace_dict):
         print(run)
        
         print(trace_dict[run]["inter-arrival_time"])
-        normalized_run["avg_payload"] += sum(Decimal(trace_dict[run]["payload_size"])) / Decimal(len(trace_dict[run]["payload_size"]))
-        normalized_run["avg_ia_time"] += sum(Decimal(trace_dict[run]["inter-arrival_time"])) / Decimal(len(trace_dict[run]["inter-arrival_time"]))
-        normalized_run["avg_t_speed"] += sum(Decimal(trace_dict[run]["trans_speed"])) / Decimal(len(trace_dict[run]["trans_speed"]))
+        normalized_run["avg_payload"] += sum(float(x) for x in trace_dict[run]["payload_size"]) / len(trace_dict[run]["payload_size"])
+        normalized_run["avg_ia_time"] += sum(float(x) for x in trace_dict[run]["inter-arrival_time"]) / len(trace_dict[run]["inter-arrival_time"])
+        normalized_run["avg_t_speed"] += sum(float(x) for x in trace_dict[run]["trans_speed"]) / len(trace_dict[run]["trans_speed"])
     
     # avg across runs
     num_runs = len(trace_dict)
     normalized_trace = {k: v / num_runs for k, v in normalized_run.items()}
-    
     
     return normalized_trace
 
@@ -201,7 +200,7 @@ def match_traces(user_dict, monitored_dict, threshold=None):
     
 
 # orchestration method         
-def analyze(known_path, target_path=none, target_pcap=none):
+def analyze(known_path, target_path=None, target_pcap=None):
     
 
     target_traces, known_traces= {}, {}
@@ -231,7 +230,9 @@ def analyze(known_path, target_path=none, target_pcap=none):
 
 
 def main():
-    analyze()
+    known_path=['wiki_1_paths', 'wiki_2_paths', 'wiki_3_paths', 'wiki_4_paths', 'wiki_5_paths']
+    tor_path=['tor_1_paths', 'tor_2_paths', 'tor_3_paths', 'tor_4_paths', 'tor_5_paths']
+    analyze(known_path, known_path[0])
     
 if __name__ == "__main__":
     main()

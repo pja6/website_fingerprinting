@@ -92,7 +92,7 @@ def scrape(url, pcap, path, runs, interface):
 
     s,o = subprocess.getstatusoutput(f"curl {url}")
     print(f"scraped {url}")
-    s,o = subprocess.getstatusoutput(f"sleep 5")
+    s,o = subprocess.getstatusoutput(f"sleep 1")
 
     r = capture.stop()
     #pathing to add pcap to correct directory
@@ -117,7 +117,7 @@ def main():
     
     print("starting crawl...")
     
-    runScrape("test_file", 2)
+    runScrape("test_file", 1)
 
     print("\nuser crawl complete\n")
 
