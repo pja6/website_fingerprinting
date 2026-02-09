@@ -69,7 +69,8 @@ def runScrape(scrape_file, numRuns=2, interface=None):
                 if not urlString:
                     break
 
-                urlString = urlString[:-1]
+                #cuts off the end on wikipedia name
+                #urlString = urlString[:-1]
                 urlString = urlString[urlString.rfind("/")+1:]
 
                 #run scrape

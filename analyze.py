@@ -72,23 +72,6 @@ def transmission_speed(pcap):
 
 #takes the path file and fills dictionary w/ related metadata accordingly
 def create_dict(metadata_dict, readFile=None, readpcap=None):
-    
-  
-    """" saving because i spent time on it
-    if readpcap:
-        sites=[]
-        sites=segment_pcap_traffic(readpcap)
-        
-        for site in sites:
-            #TODO figure out how the segmented files are coming in, if you have to change logic
-            payload = findPayloadSize(pcap)
-            iat = avg_inter_arrival_time(pcap)
-            speed= transmission_speed(pcap)
-            
-            metadata_dict[site]["payload_size"].append(payload)
-            metadata_dict[site]["inter-arrival_time"].append(iat)
-            metadata_dict[site]["trans_speed"].append(speed)
-    """
   
     file = open(f"{readFile}")
     pathList= file.readlines()
@@ -104,47 +87,59 @@ def create_dict(metadata_dict, readFile=None, readpcap=None):
         key = path.split('/')[-1]
         key=key.strip()
     
-        metadata_dict.setdefault(key, {"payload_size":[], "inter-arrival_time":[], "trans_speed":[]})
-        metadata_dict[key]["payload_size"].append(payload)
-        metadata_dict[key]["inter-arrival_time"].append(iat)
-        metadata_dict[key]["trans_speed"].append(speed)
+        metadata_dict.setdefault(key, {
+                                "_payload_size":None, 
+                                "_inter-arrival_time":None,
+                                "_trans_speed":None })
+        metadata_dict[key]["_payload_size"] = payload
+        metadata_dict[key]["_inter-arrival_time"] = iat
+        metadata_dict[key]["_trans_speed"] = speed
         
         
 def normalize(trace_dict):
     sites_list={}
+    site_visits={}
+    site_visits.setdefault("key", "num":0)
     
     #first remove all trailing crawl numbers
-    
-    for trace_name, metrics in trace_dict:
+    for trace_name, metrics in trace_dict.items():
         #just the first _
         site_name = trace_name.rsplit('_',1)[0]
         
         if site_name not in sites_list:
             sites_list[site_name]= []
+            site_visits[site_name]
         sites_list[site_name].append(metrics)
     
     
     sites_normalized={}
-    #avg individual runs
+   
+    #DEBUG print
+    print(f"sites list: \n{sites_list}")
+
+     #avg individual runs
     for site_names, runs in sites_list.items():
         normalized_avg = {
         "avg_payload": 0.0,
         "avg_ia_time": 0.0,
         "avg_t_speed": 0.0
     }
-
-       
         for run_metrics in runs:
+            print("here")
+
+            print( run_metrics)
+            print(runs[run_metrics]["_inter-arrival_time"])
+            print(runs[run_metrics]["_trans_speed"])
             
-            normalized_avg["avg_payload"] += sum(float(x) for x in trace_dict[run]["payload_size"]) / len(trace_dict[run]["payload_size"])
-            normalized_avg["avg_ia_time"] += sum(float(x) for x in trace_dict[run]["inter-arrival_time"]) / len(trace_dict[run]["inter-arrival_time"])
-            normalized_avg["avg_t_speed"] += sum(float(x) for x in trace_dict[run]["trans_speed"]) / len(trace_dict[run]["trans_speed"])
+            normalized_avg["avg_payload"] += sum(float(x) for x in runs[run_metrics]["_payload_size"]) / len(runs[run_metrics]["_payload_size"])
+            normalized_avg["avg_ia_time"] += sum(float(x) for x in runs[run_metrics]["_inter-arrival_time"]) / len(runs[run_metrics]["_inter-arrival_time"])
+            normalized_avg["avg_t_speed"] += sum(float(x) for x in runs[run_metrics]["_trans_speed"]) / len(runs[run_metrics]["_trans_speed"])
         
         # avg across runs
         num_runs = len(runs)
-        sites_normalized[site_name] = {}
+        sites_normalized[site_names] = {}
         for k, v in normalized_avg.items():
-            sites_normalized[site_name][k] = v / num_runs
+            sites_normalized[site_names][k] = v / num_runs
             
     return sites_normalized
 
@@ -157,12 +152,12 @@ def compare_score(user, monitored, weights=None):
     
     if weights is None:
         weights = {
-            "payload_size": 1.0,
-            "inter_arrival_time": 1.0,
-            "trans_speed": 1.0
+            "_payload_size": 1.0,
+            "_inter_arrival_time": 1.0,
+            "_trans_speed": 1.0
         }
     score = 0
-    for metric in ["payload_size", "inter_arrival_time", "trans_speed"]:
+    for metric in ["_payload_size", "_inter_arrival_time", "_trans_speed"]:
         print("user metrics")
         print(f"user metric: {user[metric]}")
         print(f"monitored metric: {monitored[metric]}")
@@ -175,6 +170,8 @@ def compare_score(user, monitored, weights=None):
 def find_possible_matches(user_metrics, monitored_dict, threshold=None):
     
     matches = []
+
+    #DEBUG print
     print(f"user metrics:{user_metrics}")
     print(f"monitored_metrics:{monitored_dict}")
     
@@ -233,15 +230,17 @@ def analyze(known_path, target_path=None, target_pcap=None):
             print(f'updating {path}')
 
         create_dict(known_traces, path)
-        
+
+    #DEBUG print    
     #print(attack_traces)
-  
+    #print(known_traces)
 
  
     #normalize the multiple runs
     monitored_set = normalize(known_traces)
     
-    print(monitored_set)
+    #DEBUG print
+    #print(monitored_set)
     
     #attempt to match
     matches = match_traces(target_traces, monitored_set)
