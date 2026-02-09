@@ -70,33 +70,45 @@ def transmission_speed(pcap):
 #------------------------------------Fill dictionary w/ metadata-------------------------------------------------  
 
 
+
 #takes the path file and fills dictionary w/ related metadata accordingly
-def create_dict(readFile, metadata_dict):
-    names=[]
+def create_dict(metadata_dict, readfile=none, readpcap=none):
+    
+    metadata_dict.setdefault(key, {"payload_size":[], "inter-arrival_time":[], "trans_speed":[]})
+    """" saving because i spent time on it
+    if readpcap:
+        sites=[]
+        sites=segment_pcap_traffic(readpcap)
+        
+        for site in sites:
+            #TODO figure out how the segmented files are coming in, if you have to change logic
+            payload = findPayloadSize(pcap)
+            iat = avg_inter_arrival_time(pcap)
+            speed= transmission_speed(pcap)
+            
+            metadata_dict[site]["payload_size"].append(payload)
+            metadata_dict[site]["inter-arrival_time"].append(iat)
+            metadata_dict[site]["trans_speed"].append(speed)
+    """
+  
     file = open(f"{readFile}")
     pathList= file.readlines()
-   
+
     for path in pathList:
         pcap= rdpcap(f"{path.strip()}")
         payload = findPayloadSize(pcap)
         iat = avg_inter_arrival_time(pcap)
         speed= transmission_speed(pcap)
 
-     
+    
         #steps to get name without relative path for key
-        pcap_name = path.split('/')[-1]
-        pcap_name=pcap_name.strip()
+        key = path.split('/')[-1]
+        key=key.strip()
+    
+        metadata_dict[key]["payload_size"].append(payload)
+        metadata_dict[key]["inter-arrival_time"].append(iat)
+        metadata_dict[key]["trans_speed"].append(speed)
         
-        names.append(pcap_name)
-        
-        metadata_dict.setdefault(pcap_name, {"payload_size":[], "inter-arrival_time":[], "trans_speed":[]})
-
-       
-        metadata_dict[pcap_name]["payload_size"].append(payload)
-        metadata_dict[pcap_name]["inter-arrival_time"].append(iat)
-        metadata_dict[pcap_name]["trans_speed"].append(speed)
-        
-    return names
         
 def normalize(trace_dict):
     
@@ -189,33 +201,33 @@ def match_traces(user_dict, monitored_dict, threshold=None):
     
 
 # orchestration method         
-def analyze(user_path, attack_path):
+def analyze(known_path, target_path=none, target_pcap=none):
     
 
-    user_traces, attack_traces= {}, {}
+    target_traces, known_traces= {}, {}
     u_pcap_names, a_pcap_names=[], []
     
     #fill unknown payload & size dictionaries
-    create_dict(user_path, user_traces)
+    create_dict(target_traces, target_path, target_pcap)
 
     #fill known dictionary lists based on num of runs, if more than 1, updates dictionaries to normalize
-    for i, path in enumerate(attack_path):
+    for i, path in enumerate(known_path):
         if i > 0:
             print(f'updating {path}')
 
-        create_dict(path, attack_traces)
+        create_dict(known_traces, path)
         
     #print(attack_traces)
   
 
  
     #normalize the multiple runs
-    monitored_set = normalize(attack_traces)
+    monitored_set = normalize(known_traces)
     
     print(monitored_set)
     
     #attempt to match
-    matches = match_traces(user_traces, monitored_set)
+    matches = match_traces(target_traces, monitored_set)
 
 
 def main():

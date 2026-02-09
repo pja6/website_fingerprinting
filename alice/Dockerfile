@@ -35,12 +35,22 @@ RUN apt-get update && \
 ENTRYPOINT ["sh", "-c", "\
 ip route del default && \
 ip route add default via 172.28.0.2 && \
+echo 'Waiting for network setup...' && \
+sleep 5 && \
+echo 'test' && \
+ping -c 2 -W 2 172.28.0.2 || echo 'WARNING: Cannot reach bob' && \
+echo 'Testing connectivity to NAT...' && \
+ping -c 2 -W 2 172.29.0.10 || echo 'WARNING: Cannot reach NAT' && \
+echo 'Testing internet connectivity...' && \
+ping -c 2 -W 2 8.8.8.8 || echo 'WARNING: Cannot reach internet' && \
+
 echo 'Starting Tor...' && \
 service tor start && \
 echo 'Waiting for Tor to bootstrap...' && \
 sleep 15 && \
 echo 'Running crawler...' && \
 python3 /workspace/crawler.py && \
+echo 'complete' && \
 tail -f /dev/null \
 "]
 

@@ -26,9 +26,11 @@ services:
     build: ./bob
     #image: kali-rolling
     cap_add:
-      - NET_ADMIN
+      - NET_ADMIN 
+     
     hostname: bob
     sysctls:
+    #explicitly disable forwarding:
       net.ipv4.ip_forward: "1"
     networks:
       moon-internal:
@@ -38,14 +40,28 @@ services:
     #user: 1000:1000
     volumes:
       - ./bob/bob_mount:/workspace
+
+    #turn bob into a bridge, then attach to bridge
+    #remove IP addresses from Bob
+    #run as dev so routing from alice still works
+    #disable offloading
+    #-%Y%m%d-%H%M%S
     command: >
       sh -c "
-        ip route del default &&
-        ip route add default via 172.29.0.10 &&
-        tcpdump -i eth0 -U -r /workspace/alice.pcap -w alice_flow_ -C 1 &
-        tcpdump -r alice.pcap -w alice_flow_ -C 1
+      ip route del default &&
+      ip route add default via 172.29.0.10 &&
+      
+      ethtool -K eth0 gro off lro off gso off tso off || true &&
+      ethtool -K eth1 gro off lro off gso off tso off || true &&
+      
+      iptables -A FORWARD -i eth0 -o eth1 -j ACCEPT &&
+      iptables -A FORWARD -i eth1 -o eth0 -j ACCEPT &&
+      
 
-        tail -f /dev/null
+
+      tcpdump -G 5 -w /workspace/out-%H%M%S.pcap
+
+
       "
   nat:
     build: ./nat
