@@ -126,11 +126,11 @@ def normalize(trace_dict):
         
         #avg everything    
         normalized_avgs[site_names] ={
-            "avg_payload": total_payloads / num_runs,
-            "avg_ia_time": total_times / num_runs,
-            "avg_t_speed": total_speeds / num_runs,
+            "_payload_size": total_payloads / num_runs,
+            "_inter-arrival_time": total_times / num_runs,
+            "_trans_speed": total_speeds / num_runs,
         }
-            
+    #print(normalized_avgs)       
     return normalized_avgs
 
 #------------------------------------analyze-------------------------------------------------  
@@ -148,59 +148,56 @@ def compare_score(user, monitored, weights=None):
         }
     score = 0
     for metric in ["_payload_size", "_inter_arrival_time", "_trans_speed"]:
-        print("user metrics")
-        print(f"user metric: {user[metric]}")
-        print(f"monitored metric: {monitored[metric]}")
+        #print("user metrics")
+        print(f"user metric: \n{user}")
+        print(f"monitored metric: \n{monitored}")
         diff = abs(user[metric] - monitored[metric])
         score += diff * weights[metric]
     
     return score
     
-    
-def find_possible_matches(user_metrics, monitored_dict, threshold=None):
-    
-    matches = []
-
-    #DEBUG print
-    print(f"user metrics:{user_metrics}")
-    print(f"monitored_metrics:{monitored_dict}")
-    
-    for m_name, m_metrics in monitored_dict.items():
-        #score = compare_score(user_metrics, m_metrics)
-        score= compare_score(user_metrics, monitored_dict)
-        if threshold is None or score < threshold:
-            matches.append((m_name, score))
-    
-    # Sort by similarity score (best first)
-    matches.sort(key=lambda x: x[1])
-    
-    return matches
-
-def match_traces(user_dict, monitored_dict, threshold=None):
-    
+# matching
+def find__matches(user_dict, monitored_dict, threshold=0):
     results = {}
-    available_monitored = set(monitored_dict.keys())
+    #updated set to avoid dupes
+    matched_keys = set()
     
-    for unk_name, unk_metrics in user_dict.items():
-        # Only search among available (unmatched) monitored traces
-        available_dict = {name: monitored_dict[name] 
-                         for name in available_monitored}
+    #checking against the known set
+    for known_site, metrics in monitored_dict.items():
         
-        possible_matches = find_possible_matches(unk_metrics, available_dict, threshold)
+        #hold possible matches 
+        possible_matches = {}
         
-        if possible_matches:
-            best_match, best_score = possible_matches[0]
-            results[unk_name] = (best_match, best_score)
-            available_monitored.remove(best_match)
+        #going through each of the unknown entries
+        for unk_site, metadata in user_dict.items():
+            #check for dupes first
+            if unk_site not in matched_keys:
+                #comparison
+                possible_matches[unk_site]=compare_score(metadata, metrics)
             
-            print(f"Matched: {unk_name} -> {best_match} (score: {best_score:.2f})")
-            if len(possible_matches) > 1:
-                print(f"  Other possibilities: {possible_matches[1:3]}")
-        else:
-            results[unk_name] = None
-            print(f"No match found for {unk_name}")
-    
+        best_match = min(possible_matches, key=possible_matches.get)
+        best_score = possible_matches[best_match]
+
+
+        if threshold == 0 or best_score <= threshold:
+            results[known_site] = {"best_match": best_match, "score": best_score}
+            matched_keys.add(best_match)
+            
+
     return results
+            
+
+
+# match pre-work and formatting
+def format_matches(results):
+    
+  for known_site, match_info in results.items():
+        if match_info is None:
+            print(f"No match found for {known_site}")
+        else:
+            best_match = match_info["best_match"]
+            best_score = match_info["score"]
+            print(f"Matched: {known_site} -> {best_match} (score: {best_score:.2f})")
 
     
 
@@ -212,7 +209,7 @@ def analyze(known_path, target_path=None, target_pcap=None):
     u_pcap_names, a_pcap_names=[], []
     
     #fill unknown payload & size dictionaries
-    create_dict(target_traces, target_path, target_pcap)
+    create_dict(target_traces, target_path)
 
     #fill known dictionary lists based on num of runs, if more than 1, updates dictionaries to normalize
     for i, path in enumerate(known_path):
@@ -222,7 +219,7 @@ def analyze(known_path, target_path=None, target_pcap=None):
         create_dict(known_traces, path)
 
     #DEBUG print    
-    #print(attack_traces)
+    print(f"target trace: \n{target_traces}")
     #print(known_traces)
 
  
@@ -233,7 +230,9 @@ def analyze(known_path, target_path=None, target_pcap=None):
     #print(monitored_set)
     
     #attempt to match
-    matches = match_traces(target_traces, monitored_set)
+    matches = find__matches(target_traces, monitored_set)
+    
+    format_matches(matches)
 
 
 def main():
