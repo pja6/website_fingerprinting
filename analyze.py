@@ -137,22 +137,23 @@ def normalize(trace_dict):
 
 
 
-## maybe
+## TODO currently just literal differences, so payload skews it towards large number, not 
+# as descriptive as each metrics individual differences
 def compare_score(user, monitored, weights=None):
     
     if weights is None:
         weights = {
             "_payload_size": 1.0,
-            "_inter_arrival_time": 1.0,
+            "_inter-arrival_time": 1.0,
             "_trans_speed": 1.0
         }
     score = 0
-    for metric in ["_payload_size", "_inter_arrival_time", "_trans_speed"]:
+    for metric in ["_payload_size", "_inter-arrival_time", "_trans_speed"]:
         #print("user metrics")
         print(f"user metric: \n{user}")
         print(f"monitored metric: \n{monitored}")
         diff = abs(user[metric] - monitored[metric])
-        score += diff * weights[metric]
+        score += float(diff) * weights[metric]
     
     return score
     
@@ -219,7 +220,7 @@ def analyze(known_path, target_path=None, target_pcap=None):
         create_dict(known_traces, path)
 
     #DEBUG print    
-    print(f"target trace: \n{target_traces}")
+    #print(f"target trace: \n{target_traces}")
     #print(known_traces)
 
  
