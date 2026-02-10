@@ -98,50 +98,40 @@ def create_dict(metadata_dict, readFile=None, readpcap=None):
         
 def normalize(trace_dict):
     sites_list={}
-    site_visits={}
-    site_visits.setdefault("key", "num":0)
     
-    #first remove all trailing crawl numbers
-    for trace_name, metrics in trace_dict.items():
+    #group all run data by site
+    for trace_name, run in trace_dict.items():
         #just the first _
         site_name = trace_name.rsplit('_',1)[0]
         
         if site_name not in sites_list:
             sites_list[site_name]= []
-            site_visits[site_name]
-        sites_list[site_name].append(metrics)
+        sites_list[site_name].append(run)
     
     
-    sites_normalized={}
-   
-    #DEBUG print
-    print(f"sites list: \n{sites_list}")
+    normalized_avgs={}
 
-     #avg individual runs
+    #sum per run
     for site_names, runs in sites_list.items():
-        normalized_avg = {
-        "avg_payload": 0.0,
-        "avg_ia_time": 0.0,
-        "avg_t_speed": 0.0
-    }
-        for run_metrics in runs:
-            print("here")
-
-            print( run_metrics)
-            print(runs[run_metrics]["_inter-arrival_time"])
-            print(runs[run_metrics]["_trans_speed"])
-            
-            normalized_avg["avg_payload"] += sum(float(x) for x in runs[run_metrics]["_payload_size"]) / len(runs[run_metrics]["_payload_size"])
-            normalized_avg["avg_ia_time"] += sum(float(x) for x in runs[run_metrics]["_inter-arrival_time"]) / len(runs[run_metrics]["_inter-arrival_time"])
-            normalized_avg["avg_t_speed"] += sum(float(x) for x in runs[run_metrics]["_trans_speed"]) / len(runs[run_metrics]["_trans_speed"])
+        total_payloads = 0
+        total_times=0
+        total_speeds = 0
         
-        # avg across runs
+        for run in runs:
+            total_payloads += run["_payload_size"]
+            total_times += run["_inter-arrival_time"]
+            total_speeds += run["_trans_speed"]
+        
         num_runs = len(runs)
-        sites_normalized[site_names] = {}
-        for k, v in normalized_avg.items():
-            sites_normalized[site_names][k] = v / num_runs
+        
+        #avg everything    
+        normalized_avgs[site_names] ={
+            "avg_payload": total_payloads / num_runs,
+            "avg_ia_time": total_times / num_runs,
+            "avg_t_speed": total_speeds / num_runs,
+        }
             
-    return sites_normalized
+    return normalized_avgs
 
 #------------------------------------analyze-------------------------------------------------  
 
