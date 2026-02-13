@@ -1,3 +1,5 @@
+*.pyc
+__pycache__
 bob/bob_mount/alice.pcap
 traces_root
 crawl_*
