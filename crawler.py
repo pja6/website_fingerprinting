@@ -39,7 +39,7 @@ def makeTestDir(num):
 #--------------------------------------------Scraping steps start-----------------------------------------------
 
 #scraping orchestration - uses scrape file to pass in names and url
-def runScrape(scrape_file, numRuns=2, interface=None):
+def runScrape(scrape_file, numRuns=2, interface=None, tor=False):
     global path_file, file_name, dictionary_full
     run=0
     paths = []
@@ -77,7 +77,7 @@ def runScrape(scrape_file, numRuns=2, interface=None):
                 urlString = urlString[urlString.rfind("/")+1:]
 
                 #run scrape
-                scrape(url, urlString, Path, run, interface)
+                scrape(url, urlString, Path, run, interface, tor)
             
             #I honestly cannot remember why I wrote these loops like this, but it works
             #don't remember how path works here since it's global weird that i chose to 
@@ -87,8 +87,9 @@ def runScrape(scrape_file, numRuns=2, interface=None):
             #the scrape function - kind of a mess, don't feel like untangling it rn
                 run+=1
                 dictionary_full=i
-            print(f'crawl_{run} pcap files created')
+            #print(f'crawl_{run} pcap files created')
             
+            print("path_files created")
             paths.append(path_file.name)
     #for the analyzer to use        
     return paths
@@ -96,12 +97,16 @@ def runScrape(scrape_file, numRuns=2, interface=None):
          
 
 #Actual page scraping 
-def scrape(url, pcap, path, runs, interface):
+def scrape(url, pcap, path, runs, interface, tor):
  
-    capture = AsyncSniffer(iface=interface, filter="port 443")
+    capture = AsyncSniffer(iface=interface, filter="tcp or port 443")
     capture.start()
+    if tor:
+        curl=f"curl --socks5-hostname 127.0.0.1:9050 {url}"
+    else:
+        curl=f"curl {url}"
 
-    s,o = subprocess.getstatusoutput(f"curl {url}")
+    s,o = subprocess.getstatusoutput(curl)
     print(f"scraped {url}")
     s,o = subprocess.getstatusoutput(f"sleep 1")
 
@@ -120,9 +125,6 @@ def pause_for_bob(time):
         print(f"waiting...{i} second(s)")
         s,o = subprocess.getstatusoutput(f"sleep 1")    
         
-#--------------------------------------------Generate path file only-----------------------------------------------
-
-def 
 # Params 
 def main():
     

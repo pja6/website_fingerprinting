@@ -11,18 +11,25 @@ def parse_args():
 
      # commandline input arguments
      parser = argparse.ArgumentParser()
+     group = parser.add_mutually_exclusive_group()
+
+
      prog="main.py"
      
      # main.py -run behavior 
-                #if analyse only chosen - only need files
-                        #- choose corpus -choose pcap 
+                #if analyse only chosen - only need pcap directories - if only unk given, trace_root assumed
+                #if crawl only chosen - only need url lists and maybe interface
+                #if none chosen - can give all but need file lists and unk directory
      
-     
-     parser.add_argument('-l','--url_list', help="File w/ URLs to scrape")
+     group.add_argument('-s','--scraper_mode',action='store_true', help="run scraper.py only | add -l for url list | -r for num runs | -i for interface ")
+     parser.add_argument('-l','--url_list', type=str, help="File w/ URLs to scrape e.g. test_file ")
      parser.add_argument('-r','--num_runs', type=int, default=2, help="Number of runs (default: 2)")     
-     parser.add_argument('-i','--interface', help ="network interface")
+     parser.add_argument('-i','--interface', type=str, help ="network interface")
+     parser.add_argument('-t','--tor', type=bool, help="is the tor running? will default to False")
+     group.add_argument('-a','--analyze_mode', action='store_true', help="run analyze.py only | required: -u for unknown pcap directory | add -m for feature directory")
+     parser.add_argument('-u','--target_directory', type=str, help="directory with encrypted pcap files")
+     parser.add_argument('-m','--known_directory', type=str, default="traces_root", help= "directory with monitored set/named pcap files")
      
-     return parser.parse_args()
      
 #would delete this return ^ to make it work   
 #not being used, but in case I wanted to enforce at least 1 flag
@@ -37,36 +44,53 @@ def parse_args():
 
      """
 
+     args = parser.parse_args()
+     
+    # SCRAPER MODE VALIDATION
+     if args.scraper_mode:
+        if not args.url_list:
+            parser.error("--scraper_mode requires -l [--url_list]")
 
+    # ANALYZE MODE VALIDATION
+     if args.analyze_mode:
+        if not args.target_directory:
+            parser.error("--analyze_mode requires -u [--unknown_dir]")
+
+    # FULL PIPELINE (neither mode chosen)
+     if not args.scraper_mode and not args.analyze_mode:
+        if not args.url_list or not args.target_directory:
+            parser.error("Full run requires both -l (url list) and -u (unknown dir), default run and interface will be used if not provided")
+
+     return args
 def main():
 
     args = parse_args()
 
-    # Defaults
-    scrape_file = "test_file"
-    numRuns = args.num_runs
-    interface = args.interface
 
     # Validate combinations
-    if args.url_list and args.interface:
-        scrape_file = args.url_list
-        print("3-argument mode")
+    if args.scraper_mode:
+        print("Running scraper only")
+        runScrape(args.url_list, args.num_runs, args.interface, args.tor)
+        return
 
-    elif args.url_list:
-        scrape_file = args.url_list
-        print("2-argument mode")
+    if args.analyze_mode:
+        print("Running analyze only")
+        
+        k_path = generate_paths(args.known_directory)
+        u_path = generate_paths(args.target_directory)
 
-    else:
-        print("running w/ default num of runs: 2")
+        analyze(k_path, u_path)
+        return
 
+    # Full pipeline
+    print("Running full pipeline")
+        
     print("Scraping...")
-    paths = runScrape(scrape_file, numRuns, interface)
+    runScrape(args.url_list, args.num_runs, args.interface)
     
-    print("path[0]")
-    print(paths[0])
+    u_path = generate_paths(args.target_directory)
     
-    print(paths)
-    analyze(paths, paths[0])
+    analyze("traces_root", u_path)
     
 
 
