@@ -110,8 +110,46 @@ def create_dict(metadata_dict, pathList):
         
 #------------------------------------ Normalize -------------------------------------------------  
 
+#Needed to update so payload didn't make score massive w/o compromising usefulness of weights in compare_score
+# Options were weights ^ | min/max (chose this for 0-1 score 0.3 = 30% difference across all metrics, can then weight) | percentage |     
+def calc_min_max(trace_dict):
+    min_max = {
+        "_payload_size": {"min": float('inf'), "max": float('-inf')},
+        "_inter-arrival_time": {"min": float('inf'), "max": float('-inf')},
+        "_trans_speed": {"min": float('inf'), "max": float('-inf')}
+    }
+    
+    for metrics in trace_dict.values():
+        for metric_name in ["_payload_size", "_inter-arrival_time", "_trans_speed"]:
+            val = metrics[metric_name]
+            min_max[metric_name]["min"] = min(min_max[metric_name]["min"], val)
+            min_max[metric_name]["max"] = max(min_max[metric_name]["max"], val) 
+   
+    return min_max
+
+# scale all traces in dictionary using provided min/max values        
+def apply_scaling(trace_dict, min_max):
+    scaled_dict={}
+    # Scale each metric to 0-1 range
+    
+    for site_name, metrics in trace_dict.items():
+        scaled_dict[site_name] = {}
         
-        
+        for metric_name in ["_payload_size", "_inter-arrival_time", "_trans_speed"]:
+            min_val = min_max[metric_name]["min"]
+            max_val = min_max[metric_name]["max"]
+            
+            if max_val - min_val > 0:
+                # Scale to 0-1
+                scaled_dict[site_name][metric_name] = (
+                    (metrics[metric_name] - min_val) / (max_val - min_val)
+                )
+            else:
+                scaled_dict[site_name][metric_name] = 0.0
+    
+    return scaled_dict
+
+
 def normalize(trace_dict):
     sites_list={}
     
@@ -146,8 +184,12 @@ def normalize(trace_dict):
             "_inter-arrival_time": total_times / num_runs,
             "_trans_speed": total_speeds / num_runs,
         }
+    
+    min_max = calc_min_max(normalized_avgs)
+    scaled_avgs = apply_scaling(normalized_avgs, min_max)
+    
     #print(normalized_avgs)       
-    return normalized_avgs
+    return scaled_avgs, min_max
 
 #------------------------------------analyze-------------------------------------------------  
 
@@ -233,17 +275,21 @@ def analyze(known_path, target_path=None, target_pcap=None):
     ### Monitored set ###
     #fill known dictionary lists based on num of runs, if more than 1, updates dictionaries to normalize
     
-
     create_dict(known_traces, known_path)
  
     #normalize the multiple runs
-    monitored_set = normalize(known_traces)
+    monitored_set, min_max_val = normalize(known_traces)
+    
+    #now target_traces use the same scale as monitored set, so you don't get:
+        # target trace with 150k payload -> becomes 0.58 (using 80k-200k scale)
+        # monitored trace with 150k payload -> becomes 0.125 (using 100k-500k scale)
+    target_traces_scaled = apply_scaling(target_traces, min_max_val)
     
     #DEBUG print
     #print(monitored_set)
     
     #attempt to match
-    matches = find__matches(target_traces, monitored_set)
+    matches = find__matches(target_traces_scaled, monitored_set)
     
     format_matches(matches)
 

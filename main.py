@@ -70,7 +70,7 @@ def main():
     # Validate combinations
     if args.scraper_mode:
         print("Running scraper only")
-        runScrape(args.url_list, args.num_runs, args.interface, args.tor)
+        runScrape(args.url_list, args.num_runs, args.tor, args.interface)
         return
 
     if args.analyze_mode:
