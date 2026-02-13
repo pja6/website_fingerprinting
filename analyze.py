@@ -68,13 +68,25 @@ def transmission_speed(pcap):
 
 #------------------------------------Fill dictionary w/ metadata-------------------------------------------------  
 
+#Save pcap to list - eliminate path-file req.
+def generate_paths(root_directory="traces_root"):
+    paths = []
+    
+    for dirpath, dirnames, filenames in os.walk(root_directory):
 
+        for name in filenames:
+            if name.endswith(".pcap"):
+                full_path = os.path.join(dirpath, name)
+                paths.append(full_path)
+            
+                
+    return paths
 
 #takes the path file and fills dictionary w/ related metadata accordingly
-def create_dict(metadata_dict, readFile=None, readpcap=None):
+def create_dict(metadata_dict, pathList):
   
-    file = open(f"{readFile}")
-    pathList= file.readlines()
+    #file = open(f"{readFile}")
+    #pathList= file.readlines()
 
     for path in pathList:
         pcap= rdpcap(f"{path.strip()}")
@@ -94,6 +106,10 @@ def create_dict(metadata_dict, readFile=None, readpcap=None):
         metadata_dict[key]["_payload_size"] = payload
         metadata_dict[key]["_inter-arrival_time"] = iat
         metadata_dict[key]["_trans_speed"] = speed
+        
+        
+#------------------------------------ Normalize -------------------------------------------------  
+
         
         
 def normalize(trace_dict):
@@ -211,18 +227,14 @@ def analyze(known_path, target_path=None, target_pcap=None):
     
     #fill unknown payload & size dictionaries
     create_dict(target_traces, target_path)
-
+    
+    print("done")
+    
+    ### Monitored set ###
     #fill known dictionary lists based on num of runs, if more than 1, updates dictionaries to normalize
-    for i, path in enumerate(known_path):
-        if i > 0:
-            print(f'updating {path}')
+    
 
-        create_dict(known_traces, path)
-
-    #DEBUG print    
-    #print(f"target trace: \n{target_traces}")
-    #print(known_traces)
-
+    create_dict(known_traces, known_path)
  
     #normalize the multiple runs
     monitored_set = normalize(known_traces)
@@ -239,7 +251,14 @@ def analyze(known_path, target_path=None, target_pcap=None):
 def main():
     known_path=['wiki_1_paths', 'wiki_2_paths', 'wiki_3_paths', 'wiki_4_paths', 'wiki_5_paths']
     tor_path=['tor_1_paths', 'tor_2_paths', 'tor_3_paths', 'tor_4_paths', 'tor_5_paths']
-    analyze(known_path, known_path[0])
+    
+    scraper_traces = generate_paths("traces_root")
+    wiki_traces = generate_paths("wiki_root")
+    tor_traces = generate_paths("tor_root")
+    print(wiki_traces)
+    analyze(wiki_traces, wiki_traces)
+    
+  
     
 if __name__ == "__main__":
     main()

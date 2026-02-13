@@ -1,1 +1,16 @@
 bob/bob_mount/alice.pcap
+traces_root
+crawl_*
+*_paths
+
+tor_1_paths
+tor_2_paths
+tor_3_paths
+tor_4_paths
+tor_5_paths
+
+wiki_1_paths
+wiki_2_paths 
+wiki_3_paths 
+wiki_4_paths 
+wiki_5_paths

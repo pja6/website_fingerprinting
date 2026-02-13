@@ -11,7 +11,7 @@ path_file=None
 file_name=""
 dictionary_full=20
 
-#--------------------------------------------Scraping steps start-----------------------------------------------
+#--------------------------------------------Directory Structure-----------------------------------------------
 #Organizational method - builds the test directories 
 def makeTestDir(num):
     global Path; 
@@ -34,6 +34,9 @@ def makeTestDir(num):
 
   # Define paths for degree_folder and nonDegree_folder inside the test directory
     Path= traces_folder
+    
+    
+#--------------------------------------------Scraping steps start-----------------------------------------------
 
 #scraping orchestration - uses scrape file to pass in names and url
 def runScrape(scrape_file, numRuns=2, interface=None):
@@ -75,6 +78,13 @@ def runScrape(scrape_file, numRuns=2, interface=None):
 
                 #run scrape
                 scrape(url, urlString, Path, run, interface)
+            
+            #I honestly cannot remember why I wrote these loops like this, but it works
+            #don't remember how path works here since it's global weird that i chose to 
+            #make it a param for the fx - also can't use the print below since the weird run
+            #incrementing means it's printing for every file+1 instead of the run number
+            #if i delete run then it just overwrites the pcap since it's used in naming in 
+            #the scrape function - kind of a mess, don't feel like untangling it rn
                 run+=1
                 dictionary_full=i
             print(f'crawl_{run} pcap files created')
@@ -109,8 +119,11 @@ def pause_for_bob(time):
     for i in range(timer):
         print(f"waiting...{i} second(s)")
         s,o = subprocess.getstatusoutput(f"sleep 1")    
+        
+#--------------------------------------------Generate path file only-----------------------------------------------
 
-
+def 
+# Params 
 def main():
     
     #timer = 30
@@ -118,7 +131,8 @@ def main():
     
     print("starting crawl...")
     
-    runScrape("test_file", 1)
+    #Running scraper - run default is 2
+    runScrape("test_file", 2)
 
     print("\nuser crawl complete\n")
 

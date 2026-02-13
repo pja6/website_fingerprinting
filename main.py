@@ -1,18 +1,23 @@
 #! /usr/bin/env python3
 
 from scapy.all import *
-import subprocess
-import os
 import argparse
 from crawler import *
 from analyze import *
 
-
+#TODO have no way to import pcap/file - everything starts from the crawler list file or hardcoded path
 
 def parse_args():
 
      # commandline input arguments
      parser = argparse.ArgumentParser()
+     prog="main.py"
+     
+     # main.py -run behavior 
+                #if analyse only chosen - only need files
+                        #- choose corpus -choose pcap 
+     
+     
      parser.add_argument('-l','--url_list', help="File w/ URLs to scrape")
      parser.add_argument('-r','--num_runs', type=int, default=2, help="Number of runs (default: 2)")     
      parser.add_argument('-i','--interface', help ="network interface")
@@ -38,7 +43,7 @@ def main():
     args = parse_args()
 
     # Defaults
-    scrape_file = "monitored_set"
+    scrape_file = "test_file"
     numRuns = args.num_runs
     interface = args.interface
 
@@ -54,7 +59,6 @@ def main():
     else:
         print("running w/ default num of runs: 2")
 
-    #scraping steps only run if user provides input
     print("Scraping...")
     paths = runScrape(scrape_file, numRuns, interface)
     
@@ -62,7 +66,7 @@ def main():
     print(paths[0])
     
     print(paths)
-    analyze(paths[0], paths)
+    analyze(paths, paths[0])
     
 
 
