@@ -4,6 +4,7 @@
 from scapy.all import *
 import subprocess
 import os
+import random
 
 #globals
 Path=""
@@ -39,7 +40,7 @@ def makeTestDir(num):
 #--------------------------------------------Scraping steps start-----------------------------------------------
 
 #scraping orchestration - uses scrape file to pass in names and url
-def runScrape(scrape_file, numRuns=2, interface=None, tor=False):
+def runScrape(scrape_file, numRuns=2, tor=False, interface=None):
     global path_file, file_name, dictionary_full
     run=0
     paths = []
@@ -49,7 +50,6 @@ def runScrape(scrape_file, numRuns=2, interface=None, tor=False):
     #create path to the script
     scrape_file_path = os.path.join(script_dir, scrape_file)
 
-    
     
     # Loop from 1 to numRuns (inclusive)
     for run in range(1, numRuns+1):
@@ -102,13 +102,20 @@ def scrape(url, pcap, path, runs, interface, tor):
     capture = AsyncSniffer(iface=interface, filter="tcp or port 443")
     capture.start()
     if tor:
-        curl=f"curl --socks5-hostname 127.0.0.1:9050 {url}"
+        cmd = ["curl", "--socks5-hostname", "127.0.0.1:9050", url]
     else:
-        curl=f"curl {url}"
+        cmd = ["curl", url]
+    
+    #removed s,o = subprocess.getstatusoutput(curl) - was causing byte error and crashing mid-crawl
+    #still getting all necessary metadata, don't need to capture stdout or decode
 
-    s,o = subprocess.getstatusoutput(curl)
+    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    
     print(f"scraped {url}")
-    s,o = subprocess.getstatusoutput(f"sleep 1")
+
+    #in an attempt to provide better results for set - using random time between 5-15 sec
+    sleep_time = random.randint(5, 15) 
+    s,o = subprocess.getstatusoutput(f"sleep {sleep_time}")
 
     r = capture.stop()
     #pathing to add pcap to correct directory
@@ -134,7 +141,7 @@ def main():
     print("starting crawl...")
     
     #Running scraper - run default is 2
-    runScrape("test_file", 2)
+    runScrape("scrape_file", 1, True)
 
     print("\nuser crawl complete\n")
 
