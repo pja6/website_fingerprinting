@@ -194,9 +194,6 @@ def normalize(trace_dict):
 #------------------------------------analyze-------------------------------------------------  
 
 
-
-## TODO currently just literal differences, so payload skews it towards large number, not 
-# as descriptive as each metrics individual differences
 def compare_score(user, monitored, weights=None):
     
     if weights is None:
@@ -207,15 +204,98 @@ def compare_score(user, monitored, weights=None):
         }
     score = 0
     for metric in ["_payload_size", "_inter-arrival_time", "_trans_speed"]:
-        #print("user metrics")
-        print(f"user metric: \n{user}")
-        print(f"monitored metric: \n{monitored}")
+        #print(f"user metric: \n{user}")
+        #print(f"monitored metric: \n{monitored}")
         diff = abs(user[metric] - monitored[metric])
         score += float(diff) * weights[metric]
     
     return score
+
+#helper method, make top-k list per known site
+def get_top_k_per_site(monitored_metrics, user_dict, k=10):
+    scores = []
+
+    #compare all unk sites against current known site
+    for unk_site, user_metrics in user_dict.items():
+        score = compare_score(user_metrics, monitored_metrics)
+        scores.append((score, unk_site))
+        
+    #sort by best score first
+    scores.sort()
+    #return top k scores
+    return scores[:k]
+
+#which user traces appear in multiple lists
+def group_by_target_trace(top_k):
+    #update to avoid dupes
+    best_matches={}
     
+    for known_site, score_list in top_k.items():
+        for score, unk_site in score_list:
+            #if doesn't exist make it otherwise append
+            if unk_site not in best_matches:
+                best_matches[unk_site] = []
+            best_matches[unk_site].append((score, known_site))
+    
+    return best_matches
+    
+def resolve_conflicts(best_matches, threshold):
+    matched_set = set()
+    results = {}
+    disqualified=[]
+    
+    #try to assign best match 
+    for unk_site, candidates in best_matches.items():
+        #sort by best score first
+        candidates.sort()
+        
+        matched = False
+        #try to find best match first
+        for score, known_site in candidates:
+            #already matched?
+            if known_site not in results and unk_site not in matched_set:
+                if threshold == 0 or score <= threshold:
+                    results[known_site] = {"best_match": unk_site, "score": score}
+                    matched_set.add(unk_site)
+                    matched = True
+                    break
+        if not matched and threshold > 0:
+            #good score but over set threshold
+            disqualified.append((unk_site, candidates[0]))
+        if disqualified:
+            print(f"Skipped {len(disqualified)} matches for exceeding threshold: {threshold}")
+                
+    return results
+            
+      
+#updating matching - greedy approach would limit accuracy - now using a top-k approach per known site
+def find_top_k_matches(user_dict, monitored_dict, k=None, threshold=0):
+    # size of monitored set is default K
+    if k is None:
+        k = len(monitored_dict)
+        
+    #build list for each known site
+    top_k_matches = {}
+    
+    for known_site, mon_metrics in monitored_dict.items():
+        top_k_matches[known_site] = get_top_k_per_site(mon_metrics, user_dict, k)
+
+    # top k output:
+    # {"Wikipedia": [(0.05, "trace1"), (0.08, "trace2"), ...],
+    #  "Tor_network": [(0.03, "trace5"), (0.09, "trace1"), ...] }
+    
+    #find potential conflicts
+    best_matches = group_by_target_trace(top_k_matches)
+    
+    
+    #resolve conflicts
+    results = resolve_conflicts(best_matches, threshold)
+    
+    
+    return results
+""""
 # matching
+#TODO running out of matches breaks this - hadn't tested with uneven datasets...
 def find__matches(user_dict, monitored_dict, threshold=0):
     results = {}
     #updated set to avoid dupes
@@ -233,19 +313,24 @@ def find__matches(user_dict, monitored_dict, threshold=0):
             if unk_site not in matched_keys:
                 #comparison
                 possible_matches[unk_site]=compare_score(metadata, metrics)
+      
+            else:
+                if matched_keys is Empty:
+                    print("No likely matches found in set")
+                else:
+                    print("All possible matches found.")
             
         best_match = min(possible_matches, key=possible_matches.get)
         best_score = possible_matches[best_match]
 
-
         if threshold == 0 or best_score <= threshold:
             results[known_site] = {"best_match": best_match, "score": best_score}
-            matched_keys.add(best_match)
-            
+            matched_keys.add(best_match)   
+        
 
     return results
             
-
+"""
 
 # match pre-work and formatting
 def format_matches(results):
@@ -261,7 +346,7 @@ def format_matches(results):
     
 
 # orchestration method         
-def analyze(known_path, target_path=None, target_pcap=None):
+def analyze(known_path, target_path=None, target_pcap=None, threshold=0):
     
 
     target_traces, known_traces= {}, {}
@@ -269,9 +354,7 @@ def analyze(known_path, target_path=None, target_pcap=None):
     
     #fill unknown payload & size dictionaries
     create_dict(target_traces, target_path)
-    
-    print("done")
-    
+        
     ### Monitored set ###
     #fill known dictionary lists based on num of runs, if more than 1, updates dictionaries to normalize
     
@@ -289,7 +372,7 @@ def analyze(known_path, target_path=None, target_pcap=None):
     #print(monitored_set)
     
     #attempt to match
-    matches = find__matches(target_traces_scaled, monitored_set)
+    matches = find_top_k_matches(target_traces_scaled, monitored_set, threshold)
     
     format_matches(matches)
 
@@ -301,8 +384,9 @@ def main():
     scraper_traces = generate_paths("traces_root")
     wiki_traces = generate_paths("wiki_root")
     tor_traces = generate_paths("tor_root")
-    print(wiki_traces)
-    analyze(wiki_traces, wiki_traces)
+    test_files = generate_paths("test_files")
+    #print(wiki_traces)
+    analyze(wiki_traces, test_files, .1)
     
   
     
