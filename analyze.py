@@ -209,7 +209,8 @@ def compare_score(user, monitored, weights=None):
         diff = abs(user[metric] - monitored[metric])
         score += float(diff) * weights[metric]
     
-    return score
+    
+    return score/3
 
 #helper method, make top-k list per known site
 def get_top_k_per_site(monitored_metrics, user_dict, k=10):
@@ -219,7 +220,10 @@ def get_top_k_per_site(monitored_metrics, user_dict, k=10):
     for unk_site, user_metrics in user_dict.items():
         score = compare_score(user_metrics, monitored_metrics)
         scores.append((score, unk_site))
-        
+    
+    #DBG print
+    print(f"scores\n{scores[:k]}")
+    
     #sort by best score first
     scores.sort()
     #return top k scores
@@ -277,6 +281,7 @@ def find_top_k_matches(user_dict, monitored_dict, k=None, threshold=0):
     #build list for each known site
     top_k_matches = {}
     
+    
     for known_site, mon_metrics in monitored_dict.items():
         top_k_matches[known_site] = get_top_k_per_site(mon_metrics, user_dict, k)
 
@@ -293,44 +298,7 @@ def find_top_k_matches(user_dict, monitored_dict, k=None, threshold=0):
     
     
     return results
-""""
-# matching
-#TODO running out of matches breaks this - hadn't tested with uneven datasets...
-def find__matches(user_dict, monitored_dict, threshold=0):
-    results = {}
-    #updated set to avoid dupes
-    matched_keys = set()
-    
-    #checking against the known set
-    for known_site, metrics in monitored_dict.items():
-        
-        #hold possible matches 
-        possible_matches = {}
-        
-        #going through each of the unknown entries
-        for unk_site, metadata in user_dict.items():
-            #check for dupes first
-            if unk_site not in matched_keys:
-                #comparison
-                possible_matches[unk_site]=compare_score(metadata, metrics)
-      
-            else:
-                if matched_keys is Empty:
-                    print("No likely matches found in set")
-                else:
-                    print("All possible matches found.")
-            
-        best_match = min(possible_matches, key=possible_matches.get)
-        best_score = possible_matches[best_match]
 
-        if threshold == 0 or best_score <= threshold:
-            results[known_site] = {"best_match": best_match, "score": best_score}
-            matched_keys.add(best_match)   
-        
-
-    return results
-            
-"""
 
 # match pre-work and formatting
 def format_matches(results):
@@ -346,7 +314,7 @@ def format_matches(results):
     
 
 # orchestration method         
-def analyze(known_path, target_path=None, target_pcap=None, threshold=0):
+def analyze(known_path, target_path=None, k=None, threshold=0):
     
 
     target_traces, known_traces= {}, {}
@@ -372,7 +340,7 @@ def analyze(known_path, target_path=None, target_pcap=None, threshold=0):
     #print(monitored_set)
     
     #attempt to match
-    matches = find_top_k_matches(target_traces_scaled, monitored_set, threshold)
+    matches = find_top_k_matches(target_traces_scaled, monitored_set, 5, threshold)
     
     format_matches(matches)
 
@@ -384,9 +352,10 @@ def main():
     scraper_traces = generate_paths("traces_root")
     wiki_traces = generate_paths("wiki_root")
     tor_traces = generate_paths("tor_root")
-    test_files = generate_paths("test_files")
+    test_traces = generate_paths("test_files")
+    target_traces = generate_paths("target_root")
     #print(wiki_traces)
-    analyze(wiki_traces, test_files, .1)
+    analyze(tor_traces, target_traces)
     
   
     
