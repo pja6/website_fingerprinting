@@ -273,7 +273,7 @@ def resolve_conflicts(best_matches, threshold):
             
       
 #updating matching - greedy approach would limit accuracy - now using a top-k approach per known site
-def find_top_k_matches(user_dict, monitored_dict, k=None, threshold=0):
+def find_top_k_matches(user_dict, monitored_dict, k=None, threshold=0.0):
     # size of monitored set is default K
     if k is None:
         k = len(monitored_dict)
@@ -296,7 +296,9 @@ def find_top_k_matches(user_dict, monitored_dict, k=None, threshold=0):
     #resolve conflicts
     results = resolve_conflicts(best_matches, threshold)
     
-    
+    if not results:
+        print("No Matches Found...")
+        
     return results
 
 
@@ -314,7 +316,7 @@ def format_matches(results):
     
 
 # orchestration method         
-def analyze(known_path, target_path=None, k=None, threshold=0):
+def analyze(known_path, target_path=None, k=None, threshold=0.0):
     
 
     target_traces, known_traces= {}, {}
@@ -335,6 +337,9 @@ def analyze(known_path, target_path=None, k=None, threshold=0):
         # target trace with 150k payload -> becomes 0.58 (using 80k-200k scale)
         # monitored trace with 150k payload -> becomes 0.125 (using 100k-500k scale)
     target_traces_scaled = apply_scaling(target_traces, min_max_val)
+    
+    #print(f"Monitored set sample: {list(monitored_set.items())[:2]}")
+    #print(f"Target traces sample: {list(target_traces_scaled.items())[:2]}")
     
     #DEBUG print
     #print(monitored_set)

@@ -16,3 +16,8 @@ wiki_2_paths
 wiki_3_paths 
 wiki_4_paths 
 wiki_5_paths
+
+*.yaml
+vm_notes.txt
+
+
