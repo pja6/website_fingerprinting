@@ -270,7 +270,11 @@ def resolve_conflicts(best_matches, threshold):
             print(f"Skipped {len(disqualified)} matches for exceeding threshold: {threshold}")
                 
     return results
-            
+ 
+#TODO update greedy algorithm to layered competitive matching process -  won't add anything meaningful to current design tho ("Layered competitive assignment with progressive relaxation", apparently similar to a deferred acceptance algorithm, but score based)
+'''
+my other approach is fill the in blanks - think of all lists lined up in columns, each row a different score level - last level best, first level worst - first step last row is popped into the matched_key dict/list - whatever matches without conflict stays in the list, that column is removed, for any conflicts tie breaking happens, best match stays and worst match is removed - next round, pop next level into the empty spaces - repeat until all spaces full
+'''           
       
 #updating matching - greedy approach would limit accuracy - now using a top-k approach per known site
 def find_top_k_matches(user_dict, monitored_dict, k=None, threshold=0.0):

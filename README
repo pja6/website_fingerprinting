@@ -1,0 +1,25 @@
+Paul Aguilar
+Lab3 - Website Fingerprinting
+
+The tarball includes all the necessary files to run/test the analyzer and web crawler with, including the tor traffic unknown traces and monitored set. All path files are also included for crawl/scrape test.
+
+
+To test the crawler on its own use:
+
+        `sudo python3 main.py -s -l monitored_set -r 1`
+
+Following this you can test the analyzer with the newly created directory:
+
+        `sudo python3 main.py -a -u traces_root -m traces_root -k 5`
+
+To run the full Python script you can use:
+
+        `sudo python3 main.py -l monitored_set -u target_root -r 5 -k 10 -c 0.2`
+
+        - runs the crawler with the monitored set list to crawl 10 wiki pages for 5 Runs. Then the analyzer uses that collected data as the monitored set to test against provided/unknown directory (target root) with a top-k value of 10 and a threshold of 20%.
+
+Each menu flag has its own help feature to check for expectation.
+
+        python3 main.py --help
+
+Additionally, all Docker components and relevant VM files have been tar'd and included in the submission.
